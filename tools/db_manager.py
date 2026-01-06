@@ -192,6 +192,7 @@ class DBManagerApp:
         self.conn_combo.bind("<<ComboboxSelected>>", self.on_select_connection)
         
         tk.Button(top_frame, text="新增連線", command=self.add_connection, bg="#f0f0f0").pack(side=tk.LEFT, padx=2)
+        tk.Button(top_frame, text="匯入 SQL (.sql)", command=self.import_sql, bg="#fff9c4").pack(side=tk.LEFT, padx=2)
         tk.Button(top_frame, text="編輯", command=self.edit_connection).pack(side=tk.LEFT, padx=2)
         tk.Button(top_frame, text="刪除", command=self.delete_connection).pack(side=tk.LEFT, padx=2)
         
@@ -275,6 +276,71 @@ class DBManagerApp:
             self.update_combo()
             self.conn_combo.set(name)
             self.on_select_connection(None)
+
+    def import_sql(self):
+        # 1. Select SQL File
+        sql_file = filedialog.askopenfilename(
+            title="Select SQL File to Import",
+            filetypes=[("SQL Files", "*.sql"), ("All Files", "*.*")]
+        )
+        if not sql_file: return
+
+        # 2. Ask for Connection Name
+        default_name = os.path.splitext(os.path.basename(sql_file))[0]
+        conn_name = simpledialog.askstring("Import SQL", "Enter Name for this Connection:", initialvalue=default_name)
+        if not conn_name: return
+        
+        if conn_name in self.connections:
+            if not messagebox.askyesno("Overwrite", f"Connection '{conn_name}' already exists. Overwrite?"):
+                return
+
+        # 3. Create Import Directory
+        import_dir = os.path.join(current_dir, "..", "data", "imported_dbs")
+        os.makedirs(import_dir, exist_ok=True)
+        
+        # 4. Convert SQL to SQLite
+        db_path = os.path.join(import_dir, f"{conn_name}.db")
+        
+        try:
+            # Read SQL
+            try:
+                with open(sql_file, 'r', encoding='utf-8') as f: sql_script = f.read()
+            except UnicodeDecodeError:
+                with open(sql_file, 'r', encoding='latin-1') as f: sql_script = f.read()
+
+            # Execute into new DB
+            if os.path.exists(db_path): os.remove(db_path) # Clean start
+            
+            import sqlite3
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.executescript(sql_script)
+            conn.commit()
+            conn.close()
+
+            # 5. Add to Connections
+            new_conn = {
+                "name": conn_name,
+                "type": "SQLite",
+                "connection_string": f"sqlite:///{db_path.replace(os.sep, '/')}",
+                "params": {"path": db_path}
+            }
+            
+            self.connections[conn_name] = new_conn
+            self.save_connections()
+            
+            # 6. Update UI
+            self.update_combo()
+            self.conn_combo.set(conn_name)
+            self.on_select_connection(None)
+            
+            messagebox.showinfo("Success", f"Imported '{sql_file}'\nto '{db_path}'\nand added as connection '{conn_name}'.")
+            
+            # Auto Connect to verify
+            self.connect_and_inspect()
+
+        except Exception as e:
+            messagebox.showerror("Import Failed", f"Error converting SQL to SQLite:\n{e}")
 
     def edit_connection(self):
         name = self.conn_combo.get()
