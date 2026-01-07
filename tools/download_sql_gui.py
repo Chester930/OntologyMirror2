@@ -58,11 +58,11 @@ def run_download_thread():
     """Runs the download in a separate thread to keep UI responsive."""
     url = url_entry.get().strip()
     if not url:
-        messagebox.showwarning("Input Error", "Please enter a GitHub URL.")
+        messagebox.showwarning("輸入錯誤", "請輸入 GitHub 儲存庫網址。")
         return
 
-    btn_download.config(state=tk.DISABLED, text="Downloading...")
-    status_label.config(text="Status: Cloning and searching...", fg="blue")
+    btn_download.config(state=tk.DISABLED, text="下載中... (Downloading)")
+    status_label.config(text="狀態: 複製並搜尋中...", fg="blue")
     
     # Run the actual work in a separate thread
     thread = threading.Thread(target=perform_download, args=(url,))
@@ -86,18 +86,18 @@ def perform_download(url):
         root.after(0, lambda: on_error(str(e)))
 
 def on_success(target_dir):
-    btn_download.config(state=tk.NORMAL, text="Download")
-    status_label.config(text="Status: Done!", fg="green")
-    messagebox.showinfo("Success", f"Download complete!\nFiles saved to:\n{target_dir}")
+    btn_download.config(state=tk.NORMAL, text="下載 SQL 檔案")
+    status_label.config(text="狀態: 完成!", fg="green")
+    messagebox.showinfo("成功", f"下載完成!\n檔案已儲存至:\n{target_dir}")
 
 def on_error(error_msg):
-    btn_download.config(state=tk.NORMAL, text="Download")
-    status_label.config(text="Status: Error", fg="red")
-    messagebox.showerror("Error", f"An error occurred:\n{error_msg}")
+    btn_download.config(state=tk.NORMAL, text="下載 SQL 檔案")
+    status_label.config(text="狀態: 錯誤", fg="red")
+    messagebox.showerror("錯誤", f"發生錯誤:\n{error_msg}")
 
 # GUI Setup
 root = tk.Tk()
-root.title("OntologyMirror SQL Downloader")
+root.title("OntologyMirror SQL 下載器")
 root.geometry("500x180")
 root.resizable(False, False)
 
@@ -106,16 +106,16 @@ main_frame = tk.Frame(root, padx=20, pady=20)
 main_frame.pack(fill=tk.BOTH, expand=True)
 
 # URL Label and Entry
-tk.Label(main_frame, text="GitHub Repository URL:").pack(anchor="w")
+tk.Label(main_frame, text="GitHub 儲存庫網址 (Repository URL):").pack(anchor="w")
 url_entry = tk.Entry(main_frame, font=("Arial", 10))
 url_entry.pack(fill=tk.X, pady=(5, 15))
 
 # Download Button
-btn_download = tk.Button(main_frame, text="Download SQL Files", command=run_download_thread, height=2, bg="#f0f0f0")
+btn_download = tk.Button(main_frame, text="下載 SQL 檔案", command=run_download_thread, height=2, bg="#f0f0f0")
 btn_download.pack(fill=tk.X)
 
 # Status Label
-status_label = tk.Label(main_frame, text="Status: Ready", pady=10, fg="gray")
+status_label = tk.Label(main_frame, text="狀態: 就緒", pady=10, fg="gray")
 status_label.pack()
 
 if __name__ == "__main__":

@@ -280,18 +280,18 @@ class DBManagerApp:
     def import_sql(self):
         # 1. Select SQL File
         sql_file = filedialog.askopenfilename(
-            title="Select SQL File to Import",
-            filetypes=[("SQL Files", "*.sql"), ("All Files", "*.*")]
+            title="選擇要匯入的 SQL 檔案",
+            filetypes=[("SQL 檔案", "*.sql"), ("所有檔案", "*.*")]
         )
         if not sql_file: return
 
         # 2. Ask for Connection Name
         default_name = os.path.splitext(os.path.basename(sql_file))[0]
-        conn_name = simpledialog.askstring("Import SQL", "Enter Name for this Connection:", initialvalue=default_name)
+        conn_name = simpledialog.askstring("匯入 SQL", "請輸入此連線的名稱:", initialvalue=default_name)
         if not conn_name: return
         
         if conn_name in self.connections:
-            if not messagebox.askyesno("Overwrite", f"Connection '{conn_name}' already exists. Overwrite?"):
+            if not messagebox.askyesno("覆蓋確認", f"連線 '{conn_name}' 已存在。是否覆蓋?"):
                 return
 
         # 3. Create Import Directory
@@ -334,13 +334,13 @@ class DBManagerApp:
             self.conn_combo.set(conn_name)
             self.on_select_connection(None)
             
-            messagebox.showinfo("Success", f"Imported '{sql_file}'\nto '{db_path}'\nand added as connection '{conn_name}'.")
+            messagebox.showinfo("成功", f"已匯入 '{os.path.basename(sql_file)}'\n至 '{db_path}'\n並新增為連線 '{conn_name}'。")
             
             # Auto Connect to verify
             self.connect_and_inspect()
 
         except Exception as e:
-            messagebox.showerror("Import Failed", f"Error converting SQL to SQLite:\n{e}")
+            messagebox.showerror("匯入失敗", f"將 SQL 轉換為 SQLite 時發生錯誤:\n{e}")
 
     def edit_connection(self):
         name = self.conn_combo.get()
