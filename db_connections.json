@@ -1,2 +1,34 @@
-
-    
+{
+    "employees": {
+        "name": "employees",
+        "type": "SQLite",
+        "connection_string": "sqlite:///d:/Project/OntologyMirror2/tools/../data/imported_dbs/employees.db",
+        "params": {
+            "path": "d:\\Project\\OntologyMirror2\\tools\\..\\data\\imported_dbs\\employees.db"
+        }
+    },
+    "City": {
+        "name": "City",
+        "type": "SQLite",
+        "connection_string": "sqlite:///d:/Project/OntologyMirror2/tools/../data/imported_dbs/City.db",
+        "params": {
+            "path": "d:\\Project\\OntologyMirror2\\tools\\..\\data\\imported_dbs\\City.db"
+        }
+    },
+    "Customer": {
+        "name": "Customer",
+        "type": "SQLite",
+        "connection_string": "sqlite:///d:/Project/OntologyMirror2/tools/../data/imported_dbs/Customer.db",
+        "params": {
+            "path": "d:\\Project\\OntologyMirror2\\tools\\..\\data\\imported_dbs\\Customer.db"
+        }
+    },
+    "instnwnd": {
+        "name": "instnwnd",
+        "type": "SQLite",
+        "connection_string": "sqlite:///d:/Project/OntologyMirror2/tools/../data/imported_dbs/instnwnd.db",
+        "params": {
+            "path": "d:\\Project\\OntologyMirror2\\tools\\..\\data\\imported_dbs\\instnwnd.db"
+        }
+    }
+}
