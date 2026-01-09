@@ -22,6 +22,8 @@ class SchemaSanitizerRules:
         script = re.sub(r'(?i)\bGEOMETRY\b', 'TEXT', script)
         script = re.sub(r'(?i)\bGEOGRAPHY\b', 'TEXT', script)
         script = re.sub(r'(?i)\bHIERARCHYID\b', 'TEXT', script)
+        script = re.sub(r'(?i)N?VARCHAR\s*\(\s*MAX\s*\)', 'TEXT', script)
+        script = re.sub(r'(?i)VARBINARY\s*\(\s*MAX\s*\)', 'BLOB', script)
         
         # 3. Table Options
         script = re.sub(r'(?i)\)\s*ENGINE.*?;', ');', script)
@@ -31,11 +33,29 @@ class SchemaSanitizerRules:
         script = re.sub(r'(?i)CHECK\s+CONSTRAINT\s+\[.*?\]', '', script)
         script = re.sub(r'(?i)\bWITH\s*\(.*?\)', '', script)
         script = re.sub(r'(?i)\)\s*ON\s+("PRIMARY"|\[PRIMARY\]|PRIMARY)', ')', script)
+        
+        # Remove GENERATED ALWAYS AS ROW START/END
+        script = re.sub(r'(?i)\bGENERATED\s+ALWAYS\s+AS\s+ROW\s+(START|END)\b', '', script)
+        # Remove NEXT VALUE FOR defaults
+        script = re.sub(r'(?i)DEFAULT\s*\(\s*NEXT\s+VALUE\s+FOR\s+.*?\)', '', script)
 
         # 4. Keys/Indexes/Constraints
         script = SchemaSanitizerRules._clean_create_statements(script)
         script = SchemaSanitizerRules._clean_drop_statements(script)
         # _clean_check_constraints moved to top
+        
+        # 5. Final Syntax Cleanup (Dangling commas after removals)
+        script = re.sub(r',(\s*\))', r'\1', script)
+        script = re.sub(r',(\s*;)', r'\1', script)
+        
+        # Fix potential double closing parens artifacts
+        script = re.sub(r'\)\s*[\r\n]+\s*\);', ');', script)
+        
+        # Remove computed columns: "ColumnName AS (Expression) [PERSISTED]"
+        script = re.sub(r'(?i)\bAS\s+\(.*?\)(\s+PERSISTED)?(?=\s*,|\s*$)', '', script, flags=re.MULTILINE)
+
+        # Remove INCLUDE (...) from indexes
+        script = re.sub(r'(?i)\bINCLUDE\s*\(.*?\)', '', script)
         
         return script
 
@@ -67,7 +87,7 @@ class SchemaSanitizerRules:
                 new_idx_name = idx_name
             return f"CREATE {unique}INDEX IF NOT EXISTS {new_idx_name} ON {table_name} {cols}"
 
-        script = re.sub(r'(?i)CREATE\s+(UNIQUE\s+)?INDEX\s+(?!IF\s+NOT\s+EXISTS\s+)([\w"\[\]]+)\s+ON\s+(.+?)\s*(\(.*?\))', replace_create_index, script)
+        script = re.sub(r'(?i)CREATE\s+(UNIQUE\s+)?(?:\b(?:NON)?CLUSTERED\s+)?INDEX\s+(?!IF\s+NOT\s+EXISTS\s+)([\w"\[\]]+)\s+ON\s+(.+?)\s*(\(.*?\))', replace_create_index, script)
         return script
 
     @staticmethod
@@ -125,4 +145,8 @@ class SchemaSanitizerRules:
                     constraint_match = re.search(r'(?i)CONSTRAINT\s+[\w\[\]"\'`]+\s*$', pre_chunk)
                     if constraint_match: prefix_remove_start = constraint_match.start()
                     script = script[:prefix_remove_start] + script[end_pos:]
+        
+        # Remove computed columns: "ColumnName AS (Expression)"
+        script = re.sub(r'(?i)\bAS\s+\(.*?\)(?=\s*,|\s*$)', '', script, flags=re.MULTILINE)
+        
         return script

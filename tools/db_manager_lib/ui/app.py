@@ -156,18 +156,56 @@ class DBManagerApp:
         try:
             if hasattr(self, 'active_conn'):
                 cursor = self.active_conn.cursor()
+                
+                # 1. Fetch Schema Info
+                cursor.execute(f'PRAGMA table_info("{table}")')
+                columns_info = cursor.fetchall()
+                
+                # Format Schema Output
+                display = "=== Table Schema ===\n"
+                for col in columns_info:
+                    # cid, name, type, notnull, dflt_value, pk
+                    name = col[1]
+                    dtype = col[2]
+                    notnull = col[3]
+                    dflt = col[4]
+                    is_pk = col[5]
+                    
+                    line_parts = []
+                    if is_pk: line_parts.append("[PK]")
+                    line_parts.append(f"{name} ({dtype})")
+                    
+                    reqs = []
+                    if notnull: reqs.append("Not Null")
+                    else: reqs.append("Nullable")
+                    
+                    if dflt is not None:
+                        reqs.append(f"Default: {dflt}")
+                        
+                    line_parts.append("- " + ", ".join(reqs))
+                    
+                    display += " ".join(line_parts) + "\n"
+                
+                display += "\n=== Data Preview (Top 5) ===\n"
+                
+                # 2. Fetch Data Preview
                 cursor.execute(f'SELECT * FROM "{table}" LIMIT 5')
                 rows = cursor.fetchall()
-                cols = [description[0] for description in cursor.description]
+                # cols = [description[0] for description in cursor.description] # Already have schema
                 
-                display = f"Columns: {', '.join(cols)}\\n\\n"
-                for row in rows: display += str(row) + "\\n"
+                if not rows:
+                    display += "(No data)"
+                else:
+                    for row in rows:
+                        display += str(row) + "\n"
                 
                 self.data_text.delete(1.0, tk.END)
                 self.data_text.insert(tk.END, display)
         except Exception as e:
             self.data_text.delete(1.0, tk.END)
-            self.data_text.insert(tk.END, f"Error: {e}")
+            self.data_text.insert(tk.END, f"Error: {e}\n\nTraceback:\n")
+            import traceback
+            self.data_text.insert(tk.END, traceback.format_exc())
 
     def import_sql(self):
         file_paths = filedialog.askopenfilenames(title="選擇要匯入的 SQL 檔案", filetypes=[("SQL", "*.sql"), ("All", "*.*")])
