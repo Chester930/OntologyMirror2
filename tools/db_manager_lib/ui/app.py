@@ -35,6 +35,7 @@ class DBManagerApp:
         
         tk.Button(top_frame, text="新增連線", command=self.add_connection, bg="#f0f0f0").pack(side=tk.LEFT, padx=2)
         tk.Button(top_frame, text="匯入 SQL (.sql)", command=self.import_sql, bg="#fff9c4").pack(side=tk.LEFT, padx=2)
+        tk.Button(top_frame, text="開啟 DB (.db)", command=self.open_db_file, bg="#e0f7fa").pack(side=tk.LEFT, padx=2)
         tk.Button(top_frame, text="編輯", command=self.edit_connection).pack(side=tk.LEFT, padx=2)
         tk.Button(top_frame, text="刪除", command=self.delete_connection).pack(side=tk.LEFT, padx=2)
         
@@ -81,8 +82,11 @@ class DBManagerApp:
         names = list(self.connections.keys())
         self.conn_combo['values'] = names
         if names:
-            self.conn_combo.current(0)
-            self.on_select_connection(None)
+            # If nothing connected, or current not in list, pick first
+            current = self.conn_combo.get()
+            if not current or current not in names:
+                self.conn_combo.current(0)
+                self.on_select_connection(None)
         else:
             self.conn_combo.set('')
             self.type_label.config(text="")
@@ -124,14 +128,49 @@ class DBManagerApp:
                 self.save_connections()
                 self.update_combo()
 
+    def open_db_file(self):
+        """Directly open a .db file and create a connection entry."""
+        file_path = filedialog.askopenfilename(
+            title="選擇 SQLite 資料庫檔案",
+            filetypes=[("SQLite DB", "*.db"), ("All Files", "*.*")]
+        )
+        if not file_path:
+            return
+
+        # Derive name
+        base_name = os.path.splitext(os.path.basename(file_path))[0]
+        conn_name = base_name
+        
+        # Avoid overwrite unless confirmed? Simpler: Just ensure uniqueness or overwrite.
+        # Let's prompt for name if needed, but 'Simple' means maybe just ask name or default.
+        conn_name = simpledialog.askstring("連線名稱", "請為此連線命名:", initialvalue=base_name)
+        if not conn_name: return
+
+        # Create connection dict
+        conn_data = {
+            "name": conn_name,
+            "type": "SQLite",
+            "params": {"path": file_path},
+            "connection_string": f"sqlite:///{file_path}"
+        }
+        
+        self.connections[conn_name] = conn_data
+        self.save_connections()
+        self.update_combo()
+        self.conn_combo.set(conn_name)
+        self.on_select_connection(None)
+        
+        messagebox.showinfo("成功", f"已新增連線: {conn_name}")
+
+
     def connect_and_inspect(self):
         name = self.conn_combo.get()
         if not name or name not in self.connections: return
         
         # Simple SQLite Inspector for now
         data = self.connections[name]
-        if data['type'] == 'SQLite':
-            try:
+        try:
+            if data['type'] == 'SQLite':
                 path = data['params'].get('path')
                 if not path: return
                 if path.startswith("sqlite:///"): path = path[10:]
@@ -147,8 +186,12 @@ class DBManagerApp:
                 
                 self.active_conn = conn
                 messagebox.showinfo("成功", f"已連線至 {name}")
-            except Exception as e:
-                messagebox.showerror("錯誤", str(e))
+                
+            else:
+                 messagebox.showwarning("提示", f"暫時只支援 SQLite 檢視 (目前類型: {data['type']})")
+
+        except Exception as e:
+            messagebox.showerror("錯誤", str(e))
 
     def on_select_table(self, event):
         if not self.table_list.curselection(): return
@@ -239,6 +282,23 @@ class DBManagerApp:
             if "Error" in msg or "錯誤" in msg:
                 self.root.after(0, lambda: messagebox.showerror("匯入錯誤", msg))
             elif "成功" in msg:
-                self.root.after(0, lambda: messagebox.showinfo("匯入完成", msg))
+                 def on_success():
+                    # Check if actually successful
+                    messagebox.showinfo("匯入完成", msg)
+                    
+                    # Auto-add connection
+                    conn_data = {
+                        "name": conn_name,
+                        "type": "SQLite",
+                        "params": {"path": db_path},
+                        "connection_string": f"sqlite:///{db_path}"
+                    }
+                    self.connections[conn_name] = conn_data
+                    self.save_connections()
+                    self.update_combo()
+                    self.conn_combo.set(conn_name)
+                    self.on_select_connection(None)
+                    
+                 self.root.after(0, on_success)
 
         self.importer.run_import_thread(sorted_files, conn_name, db_path, mode, log_callback)

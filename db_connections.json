@@ -30,5 +30,13 @@
         "params": {
             "path": "d:\\Project\\OntologyMirror2\\tools\\..\\data\\imported_dbs\\instnwnd.db"
         }
+    },
+    "instpubs.db": {
+        "name": "instpubs.db",
+        "type": "SQLite",
+        "connection_string": "sqlite:///D:/Project/OntologyMirror2/data/imported_dbs/instpubs.db",
+        "params": {
+            "path": "D:/Project/OntologyMirror2/data/imported_dbs/instpubs.db"
+        }
     }
 }
