@@ -46,7 +46,10 @@ class DBManagerApp:
         action_frame = tk.Frame(self.root, padx=10, pady=5)
         action_frame.pack(fill=tk.X)
         tk.Button(action_frame, text="連線並查看資料庫", command=self.connect_and_inspect, 
-                  bg="#4caf50", fg="white", font=("Microsoft JhengHei", 10, "bold"), height=2).pack(fill=tk.X)
+                  bg="#4caf50", fg="white", font=("Microsoft JhengHei", 10, "bold"), height=2).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=2)
+        
+        tk.Button(action_frame, text="映射至 Schema.org", command=self.open_mapping_window, 
+                  bg="#2196f3", fg="white", font=("Microsoft JhengHei", 10, "bold"), height=2).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=2)
 
         # Bottom Frame: Inspection Results
         bottom_frame = tk.Frame(self.root, padx=10, pady=10)
@@ -250,6 +253,34 @@ class DBManagerApp:
             import traceback
             self.data_text.insert(tk.END, traceback.format_exc())
 
+    def open_mapping_window(self):
+        # 1. Check selection
+        if not self.table_list.curselection():
+            messagebox.showwarning("警告", "請先選擇一個資料表 (Please select a table first)")
+            return
+            
+        table_name = self.table_list.get(self.table_list.curselection())
+        conn_name = self.conn_combo.get()
+        
+        # 2. Get Schema Info (Re-using logic from on_select_table, ideally should be cached)
+        # But for now, just re-query for robustness
+        schema_info = []
+        try:
+            if hasattr(self, 'active_conn'):
+                cursor = self.active_conn.cursor()
+                cursor.execute(f'PRAGMA table_info("{table_name}")')
+                schema_info = cursor.fetchall()
+        except:
+            pass # Handle error gracefully or show message
+            
+        if not schema_info:
+            messagebox.showerror("錯誤", "無法取得資料表結構，請確認連線正常。")
+            return
+            
+        # 3. Open Window
+        from .mapping_ui import MappingWindow
+        self.mapping_win = MappingWindow(self.root, conn_name, table_name, schema_info)
+        
     def import_sql(self):
         file_paths = filedialog.askopenfilenames(title="選擇要匯入的 SQL 檔案", filetypes=[("SQL", "*.sql"), ("All", "*.*")])
         if not file_paths: return

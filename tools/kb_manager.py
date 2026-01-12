@@ -50,6 +50,12 @@ def build_vector_store(jsonld_path=DEFAULT_JSONLD_PATH, vector_db_path=VECTOR_DB
         
         if not (is_class or is_property):
             continue
+
+        # STRICT FILTER: Only allow Schema.org namespace
+        if not (node_id.startswith("http://schema.org") or 
+                node_id.startswith("https://schema.org") or 
+                node_id.startswith("schema:")):
+            continue
             
         label = node.get('rdfs:label', '')
         if isinstance(label, dict): label = label.get('@value', '')

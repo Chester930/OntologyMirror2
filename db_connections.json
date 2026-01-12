@@ -38,5 +38,13 @@
         "params": {
             "path": "D:/Project/OntologyMirror2/data/imported_dbs/instpubs.db"
         }
+    },
+    "Login": {
+        "name": "Login",
+        "type": "SQLite",
+        "params": {
+            "path": "data\\imported_dbs\\Login.db"
+        },
+        "connection_string": "sqlite:///data\\imported_dbs\\Login.db"
     }
 }

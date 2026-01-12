@@ -49,13 +49,17 @@ class SchemaSanitizerRules:
         script = re.sub(r',(\s*;)', r'\1', script)
         
         # Fix potential double closing parens artifacts
-        script = re.sub(r'\)\s*[\r\n]+\s*\);', ');', script)
+        # script = re.sub(r'\)\s*[\r\n]+\s*\);', ');', script)
+        
         
         # Remove computed columns: "ColumnName AS (Expression) [PERSISTED]"
         script = re.sub(r'(?i)\bAS\s+\(.*?\)(\s+PERSISTED)?(?=\s*,|\s*$)', '', script, flags=re.MULTILINE)
 
         # Remove INCLUDE (...) from indexes
         script = re.sub(r'(?i)\bINCLUDE\s*\(.*?\)', '', script)
+        
+        # Remove ALTER TABLE ... NOCHECK CONSTRAINT ALL (T-SQL specific)
+        script = re.sub(r'(?i)ALTER\s+TABLE\s+.*?\s+(NOCHECK|CHECK)\s+CONSTRAINT\s+ALL\s*;?', '', script)
         
         return script
 

@@ -63,6 +63,19 @@ class SQLFileExtractor(BaseExtractor):
             with open(sql_path, 'r', encoding='latin-1') as f:
                 sql_script = f.read()
                 
+        # --- SANITIZATION ---
+        try:
+            from tools.db_manager_lib.core.sanitizer import SQLSanitizer
+            print(f"Sanitizing SQL script: {sql_path}")
+            sql_script = SQLSanitizer.sanitize(sql_script)
+        except ImportError:
+            print("Warning: SQLSanitizer not found. Scaling back to raw execution.")
+        except Exception as e:
+            print(f"Error during sanitization: {e}")
+            # Proceed with potentially raw script if sanitization fails? Or raise?
+            # Safer to proceed and see if sqlite takes it, or maybe it failed badly.
+            pass
+
         # Connect and execute
         conn = sqlite3.connect(db_path)
         try:
