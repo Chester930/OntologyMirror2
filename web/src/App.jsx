@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import './App.css';
 
+import ConnectionManager from './components/ConnectionManager';
+
 function App() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -35,6 +37,17 @@ function App() {
       alert("上傳失敗 (Upload failed)!");
     }
     setLoading(false);
+  };
+
+  const handleDbConnect = (tables, isLoadingState) => {
+    if (isLoadingState !== undefined) {
+      setLoading(isLoadingState);
+    }
+    if (tables) {
+      setRawTables(tables);
+      setFileName("Database Connection"); // Virtual filename
+      setStep(2);
+    }
   };
 
   const handleMapping = async () => {
@@ -101,10 +114,10 @@ function App() {
       // 5. Save JSON report in subfolder
       const jsonHandle = await subDirHandle.getFileHandle("mapping_report.json", { create: true });
       const jsonWritable = await jsonHandle.createWritable();
-      await jsonWritable.write(finalOutput.json);
+      await jsonWritable.write(JSON.stringify(finalOutput.json, null, 2));
       await jsonWritable.close();
 
-      alert(`✅ 匯出成功！\n檔案已儲存至：${parentDirHandle.name}/${folderName}`);
+      alert("匯出成功 (Export successful)!");
     } catch (err) {
       console.error(err);
       // Ignore cancellation errors
@@ -312,16 +325,28 @@ function App() {
         {loading && <div className="loader">處理中... AI 正在思考 🧠</div>}
 
         {!loading && step === 1 && (
-          <div className="upload-zone">
-            <h2>步驟 1: 上傳 SQL 檔案</h2>
-            <p>請將您的 Schema 檔案拖曳至此</p>
-            <input type="file" onChange={handleFileUpload} accept=".sql" />
-          </div>
+          <>
+            <div className="card upload-zone">
+              <h2>方法一：上傳 SQL 檔案 (Upload SQL File)</h2>
+              <input type="file" accept=".sql" onChange={handleFileUpload} disabled={loading} />
+              {loading && <p>Processing...</p>}
+            </div>
+
+            <p style={{ margin: '20px 0', opacity: 0.5 }}>- 或 OR -</p>
+
+            <ConnectionManager
+              apiUrl={API_URL}
+              onConnect={handleDbConnect}
+              isLoading={loading}
+            />
+          </>
         )}
 
         {!loading && step === 2 && (
           <div className="review-zone">
-            <h2>步驟 2: 檢閱已提取的資料表</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2>步驟 2: 檢閱已提取的資料表</h2>
+            </div>
             <div className="table-list">
               {rawTables.map((t, idx) => (
                 <div key={idx} className="table-item">
@@ -402,6 +427,14 @@ function App() {
           </div>
         )}
       </div>
+
+      {!loading && step === 2 && (
+        <div style={{ marginTop: '20px' }}>
+          <button className="btn-secondary" onClick={() => setStep(1)}>
+            ↩ 返回重新選擇 (Back)
+          </button>
+        </div>
+      )}
     </div>
   );
 }

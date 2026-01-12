@@ -54,7 +54,7 @@ body {
   padding: 3rem;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   transition: all 0.3s ease;
-  min-height: 400px;
+  min-height: 200px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -275,4 +275,112 @@ button:hover {
   background: rgba(255, 255, 255, 0.05);
   color: white;
   border-color: var(--text-muted);
+}
+
+/* Connection Manager Styles */
+.connection-manager {
+  margin-top: 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.conn-list {
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.conn-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.conn-info {
+  text-align: left;
+}
+
+.conn-info strong {
+  display: block;
+  color: var(--neon);
+}
+
+.conn-info small {
+  color: var(--text-muted);
+}
+
+.conn-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-primary-small {
+  background: var(--primary);
+  color: white;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+
+.btn-danger-small {
+  background: #ef4444;
+  color: white;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+
+.btn-secondary-small {
+  background: transparent;
+  border: 1px solid var(--text-muted);
+  color: var(--text-muted);
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+
+.add-conn-form {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1rem;
+  border-radius: 12px;
+  margin-top: 1rem;
+  text-align: left;
+}
+
+.add-conn-form input,
+.add-conn-form select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* Visibility Fixes for Inputs */
+input[type="text"],
+input[type="password"],
+select {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+option {
+  background-color: #ffffff;
+  color: #000000;
 }

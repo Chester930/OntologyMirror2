@@ -15,6 +15,8 @@ from ontologymirror.mappers.semantic_mapper import SemanticMapper, MappedTable, 
 from ontologymirror.generators.sql_generator import SqlGenerator
 from ontologymirror.generators.json_generator import JsonGenerator
 from ontologymirror.core.domain import RawTable
+from server.connection_manager import ConnectionManager
+from ontologymirror.extractors.db_extractor import DBExtractor
 
 app = FastAPI(title="OntologyMirror API", version="0.1.0")
 
@@ -38,6 +40,67 @@ class MapRequest(BaseModel):
 @app.get("/")
 def read_root():
     return {"status": "ok", "service": "OntologyMirror API"}
+
+# --- Connection Management ---
+conn_mgr = ConnectionManager()
+
+class ConnectionData(BaseModel):
+    name: str
+    type: str # SQLite, etc.
+    connection_string: str = ""
+    params: Dict[str, Any] = {}
+
+class ConnectRequest(BaseModel):
+    connection_name: str
+
+@app.get("/api/connections")
+def get_connections():
+    return conn_mgr.load_connections()
+
+@app.post("/api/connections")
+def save_connection(data: ConnectionData):
+    conn_mgr.save_connection(data.name, data.dict())
+    return {"status": "saved", "name": data.name}
+
+@app.delete("/api/connections/{name}")
+def delete_connection(name: str):
+    if conn_mgr.delete_connection(name):
+        return {"status": "deleted", "name": name}
+    raise HTTPException(status_code=404, detail="Connection not found")
+
+@app.post("/api/connect")
+def connect_db(payload: ConnectRequest):
+    conn_data = conn_mgr.get_connection(payload.connection_name)
+    if not conn_data:
+        raise HTTPException(status_code=404, detail="Connection not found")
+        
+    conn_str = conn_data.get("connection_string")
+    if not conn_str:
+        # Fallback for old saved params (e.g. just path)
+        if conn_data.get("type") == "SQLite" and "params" in conn_data:
+            path = conn_data["params"].get("path")
+            conn_str = f"sqlite:///{path}"
+            
+    if not conn_str:
+         raise HTTPException(status_code=400, detail="Invalid connection string")
+
+    try:
+        extractor = DBExtractor(conn_str, db_type=conn_data.get("type", "SQLite"))
+        raw_tables = extractor.extract()
+        
+        tables_data = []
+        for t in raw_tables:
+            tables_data.append({
+                "name": t.get("table_name", "Unknown"),
+                "columns": t.get("columns", []),
+                "raw_content": None, 
+                "sample_data": t.get("sample_data", [])
+            })
+            
+        return {"connection": payload.connection_name, "tables": tables_data}
+    except Exception as e:
+        print(f"Connection error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/upload")
 async def upload_file(file: UploadFile = File(...)):
