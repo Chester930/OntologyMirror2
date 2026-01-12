@@ -77,7 +77,7 @@ class TSQLSanitizerRules:
         script = re.sub(r'(?i)\bWITH\s+ROLLUP\b', '', script)
         script = re.sub(r'(?i)\bWITH\s+ROLLUP\b', '', script)
         script = re.sub(r'(?is)\bPERIOD\s+FOR\s+SYSTEM_TIME\s*\(.*?\)', '', script)
-        script = re.sub(r'(?is)\bWITH\s*\(\s*SYSTEM_VERSIONING\s*=\s*ON.*?(\)|$)', '', script)
+        script = re.sub(r'(?is)\bWITH\s*\(\s*SYSTEM_VERSIONING\s*=\s*ON.*?;', ';', script)
         
         # Money literals $123.45 -> 123.45
         script = re.sub(r'(?<!\w)\$(\d+(?:\.\d+)?)', r'\1', script)

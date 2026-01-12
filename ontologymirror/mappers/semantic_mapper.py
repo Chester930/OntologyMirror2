@@ -36,7 +36,7 @@ class SemanticMapper:
     def __init__(self):
         self.vector_store = SchemaVectorStore()
         # Ensure index exists (light check)
-        if self.vector_store.vector_db._collection.count() == 0:
+        if self.vector_store.vector_db.count() == 0:
             print("⚠️ Index is empty, building now...")
             self.vector_store.build_index()
             
